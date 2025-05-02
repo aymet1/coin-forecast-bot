@@ -11,7 +11,8 @@ bot = Bot(token=BOT_TOKEN)
 
 # === Binance'ten fiyat verisi çek ===
 def get_price_history_binance(symbol):
-    url = f"https://api.binance.com/api/v3/klines?symbol={symbol}USDT&interval=1d&limit=100"
+    symbol = symbol.upper() + "USDT"  # Coin adı + USDT paritesi
+    url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval=1d&limit=100"
     response = requests.get(url)
     if response.status_code != 200:
         return None
