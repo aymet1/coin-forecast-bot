@@ -21,8 +21,11 @@ def get_price_history_binance(symbol):
 
 # === Tahmin ve varyans hesapla ===
 def forecast(prices):
-    mean = round(np.mean(prices[-5:]), 2)  # Son 5 gün ortalaması
-    std = round(np.std(prices[-5:]), 2)
+    if not prices or len(prices) < 10:
+        print("Veri yetersiz veya boş!")   # 🔥 BURAYA EKLE
+        return None
+    mean = round(np.mean(prices), 2)
+    std = round(np.std(prices) * 1.5, 2)
     return mean, round(mean - std, 2), round(mean + std, 2), len(prices)
 
 # === Telegram Webhook ===
