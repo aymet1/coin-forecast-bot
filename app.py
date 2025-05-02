@@ -7,7 +7,7 @@ import numpy as np
 app = Flask(__name__)
 
 # === TELEGRAM AYARI ===
-BOT_TOKEN = "TELEGRAM_BOT_TOKENINI_YAZ"
+BOT_TOKEN = "7994060842:AAE3sKL4-nII9rvELnAvyX-jNgFyEGwBHOQ"
 bot = Bot(token=BOT_TOKEN)
 
 # === CoinMarketCap verisi çek ===
