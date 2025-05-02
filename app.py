@@ -5,7 +5,7 @@ import requests
 import numpy as np
 
 app = Flask(__name__)
-TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+TOKEN = "7994060842:AAE3sKL4-nII9rvELnAvyX-jNgFyEGwBHOQ"
 bot = Bot(token=TOKEN)
 
 def get_coin_id(symbol):
