@@ -1,71 +1,56 @@
-
 from flask import Flask, request
 from telegram import Bot
 import requests
 import numpy as np
 
 app = Flask(__name__)
-TOKEN = "7994060842:AAE3sKL4-nII9rvELnAvyX-jNgFyEGwBHOQ"
-bot = Bot(token=TOKEN)
 
-def get_coin_id(symbol):
-    url = "https://api.coingecko.com/api/v3/coins/list"
-    r = requests.get(url)
-    if r.status_code != 200:
+# === TELEGRAM AYARI ===
+BOT_TOKEN = "7994060842:AAE3sKL4-nII9rvELnAvyX-jNgFyEGwBHOQ"
+bot = Bot(token=BOT_TOKEN)
+
+# === Binance'ten fiyat verisi çek ===
+def get_price_history_binance(symbol):
+    url = f"https://api.binance.com/api/v3/klines?symbol={symbol}USDT&interval=1d&limit=100"
+    response = requests.get(url)
+    if response.status_code != 200:
         return None
-    data = r.json()
-    symbol = symbol.lower()
-    for coin in data:
-        if coin["symbol"] == symbol:
-            return coin["id"]
-    return None
+    data = response.json()
+    return [float(candle[4]) for candle in data]  # Kapanış fiyatı
 
-def get_price_history(coin_id):
-    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
-    params = {"vs_currency": "usd", "days": "max"}
-    r = requests.get(url, params=params)
-    if r.status_code != 200:
-        return None
-    prices = [p[1] for p in r.json().get("prices", [])]
-    return prices
-
+# === Tahmin ve varyans hesapla ===
 def forecast(prices):
-    mean = round(np.mean(prices), 2)
-    std = round(np.std(prices) * 1.5, 2)
-    low = round(mean - std, 2)
-    high = round(mean + std, 2)
-    return mean, low, high, len(prices)
+    mean = round(np.mean(prices[-5:]), 2)  # Son 5 gün ortalaması
+    std = round(np.std(prices[-5:]), 2)
+    return mean, round(mean - std, 2), round(mean + std, 2), len(prices)
 
+# === Telegram Webhook ===
 @app.route("/", methods=["POST"])
 def webhook():
     data = request.get_json()
-    msg = data.get("message", {})
-    text = msg.get("text", "")
-    chat_id = msg.get("chat", {}).get("id")
+    chat_id = data["message"]["chat"]["id"]
+    text = data["message"]["text"].strip().upper()
 
     if not text.startswith("!"):
-        return "ignored"
+        return "OK"
 
-    symbol = text[1:].strip().upper()
-    coin_id = get_coin_id(symbol)
-
-    if not coin_id:
-        bot.send_message(chat_id=chat_id, text="❌ Coin bulunamadı.")
-        return "ok"
-
-    prices = get_price_history(coin_id)
+    symbol = text[1:]  # !BTC -> BTC
+    prices = get_price_history_binance(symbol)
     if not prices or len(prices) < 10:
-        bot.send_message(chat_id=chat_id, text="❌ Veri yetersiz.")
-        return "ok"
+        bot.send_message(chat_id=chat_id, text="❌ Fiyat verisi alınamadı ya da yetersiz.")
+        return "OK"
 
-    mean, low, high, count = forecast(prices)
-    msg_text = f"📊 {symbol} Tahmini Kapanış: ${mean}\n🔄 Aralık: ${low} – ${high}\n📈 {count} günlük veriye dayalı"
-    bot.send_message(chat_id=chat_id, text=msg_text)
+    mean, low, high, days = forecast(prices)
+    msg = f"📈 {symbol} Tahmini Kapanış: ${mean}\n"
+    msg += f"📊 Fiyat Aralığı: ${low} - ${high}\n"
+    msg += f"📅 {days} günlük Binance verisiyle hesaplandı"
+
+    bot.send_message(chat_id=chat_id, text=msg)
     return "ok"
 
 @app.route("/")
 def home():
-    return "Bot aktif!"
+    return "Coin Forecast Bot Aktif!"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
