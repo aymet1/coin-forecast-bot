@@ -23,10 +23,10 @@ def get_historical_prices_cmc(symbol, convert="USD"):
             'time_end': end_date.isoformat(),
             'interval': 'daily'
         }
-        headers = {
-            'Accepts': 'application/json',
-            'X-CMC_PRO_API_KEY': 385f0b74-ba78-4451-8956-234722f5465e ,
-        }
+   headers = {
+    "Accept": "application/json",
+    "X-CMC_PRO_API_KEY": "385f0b74-ba78-4451-8956-234722f5465e"
+}
         response = requests.get(url, headers=headers, params=parameters)
         data = response.json()
         if "data" not in data or "quotes" not in data["data"]:
